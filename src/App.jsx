@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./index.css";
 
-const N8N_WEBHOOK = import.meta.env.VITE_N8N_WEBHOOK;
+const N8N_WEBHOOK = import.meta.env.VITE_TEST_N8N_WEBHOOK;
 
-function ChatBubble({ from, text, time }) {
+function ChatBubble({ from, text, time, typing }) {
   return (
     <div className={`message ${from}`}>
-      <div>{text}</div>
-      <div className="message-time">{time}</div>
+      <div>{typing ? "💭 Geo-Cat está escribiendo..." : text}</div>
+      {!typing && <div className="message-time">{time}</div>}
     </div>
   );
 }
@@ -25,12 +25,14 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const listRef = useRef(null);
 
+  // 🔹 Scroll automático
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // 🔹 Enviar mensaje
   async function handleSend(e) {
     e?.preventDefault?.();
     const text = input.trim();
@@ -39,8 +41,15 @@ export default function App() {
     const userMsg = { id: Date.now(), from: "user", text, time: timeNow() };
     setMessages((m) => [...m, userMsg]);
     setInput("");
-
     setSending(true);
+
+    // mensaje temporal de "escribiendo..."
+    const typingId = Date.now() + 1;
+    setMessages((m) => [
+      ...m,
+      { id: typingId, from: "bot", text: "", time: "", typing: true },
+    ]);
+
     try {
       const res = await fetch(N8N_WEBHOOK, {
         method: "POST",
@@ -49,41 +58,35 @@ export default function App() {
       });
 
       if (!res.ok) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: Date.now() + 1,
-            from: "bot",
-            text: `Error: ${res.status}`,
-            time: timeNow(),
-          },
-        ]);
-      } else {
-        const data = await res.json();
-        const replyText =
-          data?.reply ||
-          data?.answer ||
-          data?.text ||
-          "✨ Recibí tu mensaje, pero no encontré respuesta válida.";
-
-        setMessages((m) => [
-          ...m,
-          { id: Date.now() + 2, from: "bot", text: replyText, time: timeNow() },
-        ]);
+        replaceTypingWithMessage(typingId, `Error: ${res.status}`);
+        return;
       }
+
+      const data = await res.json().catch(() => null);
+      const replyText =
+        data?.reply ||
+        data?.answer ||
+        data?.text ||
+        data?.message ||
+        "✨ Recibí tu mensaje, pero no encontré respuesta válida.";
+
+      replaceTypingWithMessage(typingId, replyText);
     } catch (err) {
-      setMessages((m) => [
-        ...m,
-        {
-          id: Date.now() + 3,
-          from: "bot",
-          text: `Error de red: ${err.message}`,
-          time: timeNow(),
-        },
-      ]);
+      replaceTypingWithMessage(typingId, `Error de red: ${err.message}`);
     } finally {
       setSending(false);
     }
+  }
+
+  // 🔹 Reemplaza el bubble "escribiendo..." con el mensaje real
+  function replaceTypingWithMessage(typingId, text) {
+    setMessages((m) =>
+      m.map((msg) =>
+        msg.id === typingId
+          ? { id: Date.now() + 2, from: "bot", text, time: timeNow() }
+          : msg
+      )
+    );
   }
 
   return (
@@ -102,7 +105,13 @@ export default function App() {
       {/* Messages */}
       <main ref={listRef} className="chat-messages">
         {messages.map((m) => (
-          <ChatBubble key={m.id} from={m.from} text={m.text} time={m.time} />
+          <ChatBubble
+            key={m.id}
+            from={m.from}
+            text={m.text}
+            time={m.time}
+            typing={m.typing}
+          />
         ))}
       </main>
 
@@ -121,6 +130,7 @@ export default function App() {
   );
 }
 
+// 🔹 Hora actual
 function timeNow() {
   const d = new Date();
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
