@@ -10,7 +10,7 @@ app.use(express.json());
 let messages: { id: number; from: string; text: string; time: string }[] = [];
 
 // Endpoint que recibe mensajes de n8n
-app.post("/api/messages", (req: Request, res: Response) => {
+app.post("/messages", (req: Request, res: Response) => {
   const { text } = req.body;
 
   if (!text) {
@@ -32,7 +32,7 @@ app.post("/api/messages", (req: Request, res: Response) => {
 });
 
 // Endpoint para que el frontend consulte los mensajes
-app.get("/api/messages", (req: Request, res: Response) => {
+app.get("/messages", (req: Request, res: Response) => {
   res.json(messages);
 });
 
