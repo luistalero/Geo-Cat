@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 
 type Props = {
@@ -16,28 +18,38 @@ function Chat({ username }: Props) {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
+  
     const myMsg: Message = { sender: "me", user: username, text: input };
     setMessages((prev) => [...prev, myMsg]);
-
+  
     try {
-      const res = await fetch("/api/chat/send", {
+      const res = await fetch("https://backend-worker.lt726875.workers.dev/api/chat/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input, username }),
       });
-
+  
       const data = await res.json();
-
+  
+      // 🔥 Limpiar la respuesta para mostrar solo texto
+      let replyText = "Sin respuesta";
+  
+      if (typeof data.reply === "string") {
+        replyText = data.reply;
+      } else if (Array.isArray(data.reply)) {
+        replyText = data.reply
+          .map((r: any) => (r.message ? r.message : JSON.stringify(r)))
+          .join("\n");
+      } else if (data.message) {
+        replyText = data.message;
+      }
+  
       const botMsg: Message = {
         sender: "bot",
         user: "Bot 🤖",
-        text:
-          typeof data.reply === "string"
-            ? data.reply
-            : data.message || JSON.stringify(data) || "Sin respuesta",
+        text: replyText,
       };
-
+  
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
       setMessages((prev) => [
@@ -45,7 +57,7 @@ function Chat({ username }: Props) {
         { sender: "bot", user: "Sistema", text: "❌ Error al enviar el mensaje" },
       ]);
     }
-
+  
     setInput("");
   };
 

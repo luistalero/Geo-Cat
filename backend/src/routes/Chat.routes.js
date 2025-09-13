@@ -1,24 +1,24 @@
 import { Router } from "express";
 import "dotenv/config";
 
-
 const router = Router();
 
 router.post("/send", async (req, res) => {
   try {
-    const { message } = req.body;
-    const { role } = req.body;
+    const { message, role, username } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: "El mensaje es requerido" });
     }
 
-    const n8nUrl = process.env.N8N_WEBHOOK_URL || "https://n8n-crm-production.up.railway.app/webhook-test/geo-cat-chat";
+    const n8nUrl =
+      process.env.N8N_WEBHOOK_URL ||
+      "https://n8n-crm-production.up.railway.app/webhook-test/geo-cat-chat";
 
     const response = await fetch(n8nUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, role }),
+      body: JSON.stringify({ message, role, username }), // 🔥 aquí mandamos también username
     });
 
     const data = await response.json();

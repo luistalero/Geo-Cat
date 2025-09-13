@@ -1,0 +1,11 @@
+name = "backend-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-11"
+
+[vars]
+USER = "Admin"
+PASSWORD = "1234"
+MIMUJER = "MiMujer"
+MIMUJERPASS = "claveMujer"
+N8N_WEBHOOK_URL = "https://n8n-crm-production.up.railway.app/webhook/geo-cat-chat"
+TEST_N8N_WEBHOOK_URL = "https://n8n-crm-production.up.railway.app/webhook-test/geo-cat-chat"
